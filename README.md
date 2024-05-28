@@ -5,7 +5,7 @@
 * [ToolKit](https://github.com/cpyhal3515/OpenMIPS/tree/main/ToolKit) 中主要包括编译 MIPS 指令的文件。
     * **Step1**：首先需要将 mips-4.3-221-mips-sde-elf-i686-pc-linux-gnu.tar.bz2 文件解压到 /opt/ 中。
     ![1](./Picture/1.png)
-    * **Step2**：之后打开用户主目录 Home 文件夹，通过 ls -a 指令找到隐藏的 .bashrc 文件，使用 gedit 编辑这个文件。
+    * **Step2**：之后打开用户主目录 Home 文件夹，通过 ls -a 指令找到隐藏的 .bashrc 文件，使用 sudo xdg-open 编辑这个文件。
     ![2](./Picture/2.png)
     
     * **Step3**：在此文件的最后加入 PATH 的设置。
