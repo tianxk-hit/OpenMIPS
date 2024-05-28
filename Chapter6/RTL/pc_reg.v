@@ -1,25 +1,34 @@
-//---------------------------- pc_reg.v ----------------------------//
-// pc_reg.v ç”¨æ¥å–å€ï¼Œä¸»è¦æœ‰ä¸¤ä¸ªåŠŸèƒ½ï¼š
-// 1. ce ä½œä¸ºæŒ‡ä»¤å¯„å­˜å™¨çš„ä½¿èƒ½å€¼
-// 2. pc ï¼Œå½“ ce ä½¿èƒ½åæ¯ä¸ª clkï¼Œpc è‡ªå¢ 4
-`include "../Include/define.v"
+//PCÄ£¿é£º¸ø³öÖ¸ÁîµØÖ·
 module pc_reg(
-    input clk,
-    input rst,
-    output reg [`InstAddressBus] pc,    
-    output reg ce
+clk,
+rst,
+pc,
+ce
 );
-    always @(posedge clk) begin
-        if(rst == `ResetEnable)         // å¤ä½æ—¶æŒ‡ä»¤å¯„å­˜å™¨ disabled
-            ce <= `ChipDisable;
-        else                            // å¤ä½å®ŒæˆåæŒ‡ä»¤å¯„å­˜å™¨ enabled
-            ce <= `ChipEnable;
-    end
+`include	"defines.v"
 
-    always @(posedge clk) begin
-        if(ce == `ChipDisable)          // æŒ‡ä»¤å¯„å­˜å™¨ disabled æ—¶ pc = 0 
-            pc <= `ZeroWord;
-        else                            // æŒ‡ä»¤å¯„å­˜å™¨ enabled æ—¶ï¼Œæ¯è¿‡ä¸€ä¸ª clkï¼Œpc è‡ªå¢ 4
-            pc <= pc + 4'd4;
-    end
+input	wire				clk;		//Ê±ÖÓĞÅºÅ
+input	wire				rst;		//¸´Î»ĞÅºÅ
+output	reg[`InstAddrBus]	pc;			//Òª¶ÁÈ¡µÄÖ¸ÁîµØÖ·
+output	reg					ce;			//Ö¸Áî´æ´¢Æ÷Ê¹ÄÜĞÅºÅ
+
+
+always@(posedge clk) begin
+	if(rst == `RstEnable) begin
+		ce <=		`ChipDisable;		//¸´Î»µÄÊ±ºòÖ¸Áî´æ´¢Æ÷½ûÓÃ
+	end
+	else begin
+		ce <=		`ChipEnable;		//¸´Î»½áÊøºó£¬Ö¸Áî´æ´¢Æ÷Ê¹ÄÜ
+	end
+end
+
+always@(posedge clk) begin
+	if(ce == `ChipDisable) begin
+		pc <=		32'h00000000;		//Ö¸Áî´æ´¢Æ÷½ûÓÃµÄÊ±ºò£¬pcÎª0
+	end
+	else begin
+		pc <=		pc + 4'h4;			//Ö¸Áî´æ´¢Æ÷Ê¹ÄÜµÄÊ±ºò£¬pcµÄÖµÃ¿Ê±ÖÓÖÜÆÚ¼Ó4
+	end
+end
+
 endmodule

@@ -1,53 +1,58 @@
-//---------------------------- id_ex.v ----------------------------//
-// å°±æ˜¯ä¸€ä¸ªå¯„å­˜å™¨ï¼Œä½œä¸ºæµæ°´çº¿ä¸åŒåŠŸèƒ½æ¨¡å—ä¹‹é—´æ‰“æ‹çš„éƒ¨åˆ†
-`include "../Include/define.v"
-module id_ex (
-    input clk,
-    input rst,
-
-    input [`ALUOpBus] id_aluop,
-    input [`ALUSelBus] id_alusel,
-    input [`RegisterBus] id_reg1,
-    input [`RegisterBus] id_reg2,
-    input [`RegisterAddressBus]  id_wd,
-    input id_wreg,
-
-    output reg [`ALUOpBus] ex_aluop,
-    output reg [`ALUSelBus] ex_alusel,
-    output reg [`RegisterBus] ex_reg1,
-    output reg [`RegisterBus] ex_reg2,
-    output reg [`RegisterAddressBus]  ex_wd,
-    output reg ex_wreg
-
-
+// id_exÄ£¿é½«ÒëÂë½×¶ÎÈ¡µÃµÄÔËËãÀàĞÍ¡¢Ô´²Ù×÷Êı¡¢ÒªĞ´µÄÄ¿µÄ¼Ä´æÆ÷µØÖ·µÈ½á¹û£¬ÔÚÏÂÒ»¸öÊ±ÖÓ´«µİµ½Á÷Ë®ÏßÖ´ĞĞ½×¶Î
+module id_ex(
+clk,
+rst,
+id_alusel,
+id_aluop,
+id_reg1,
+id_reg2,
+id_wd,
+id_wreg,
+ex_alusel,
+ex_aluop,
+ex_reg1,
+ex_reg2,
+ex_wd,
+ex_wreg
 );
+`include	"defines.v"
 
+input		wire				clk;
+input		wire				rst;
 
+//´ÓÒëÂë½×¶Î´«µİ¹ıÀ´µÄĞÅÏ¢
+input		wire[`AluOpBus]		id_aluop;
+input		wire[`AluSelBus]	id_alusel;
+input		wire[`RegBus]		id_reg1;
+input		wire[`RegBus]		id_reg2;
+input		wire[`RegAddrBus]	id_wd;
+input		wire				id_wreg;
+
+//´«µİµ½Ö´ĞĞ½×¶ÎµÄĞÅÏ¢
+output		reg[`AluOpBus]		ex_aluop;
+output		reg[`AluSelBus]		ex_alusel;
+output		reg[`RegBus]		ex_reg1;
+output		reg[`RegBus]		ex_reg2;
+output		reg[`RegAddrBus]	ex_wd;
+output		reg					ex_wreg;
 
 always@(posedge clk) begin
-    if(rst == `ResetEnable) begin
-        ex_aluop   <= `EXE_NOR_OP;
-        ex_alusel  <= `EXE_RES_NOP;
-
-        ex_reg1    <= `ZeroWord;
-        ex_reg2    <= `ZeroWord;
-
-        ex_wd      <= `NOPRegisterAddress;
-        ex_wreg    <= `WriteDisable;
-    end
-    else begin
-        ex_aluop   <= id_aluop;
-        ex_alusel  <= id_alusel;
-        ex_reg1    <= id_reg1;  
-        ex_reg2    <= id_reg2;  
-        ex_wd      <= id_wd  ;  
-        ex_wreg    <= id_wreg;
-    end
-
-
-
-
+	if(rst == `RstEnable) begin
+		ex_aluop		<=			`EXE_NOP_OP;
+		ex_alusel		<=			`EXE_RES_NOP;
+		ex_reg1			<=			`ZeroWord;
+		ex_reg2			<=			`ZeroWord;
+		ex_wd			<=			`NOPRegAddr;
+		ex_wreg			<=			`WriteDisable;
+	end
+	else begin
+		ex_aluop		<=			id_aluop;
+		ex_alusel		<=			id_alusel;
+		ex_reg1			<=			id_reg1;
+		ex_reg2			<=			id_reg2;
+		ex_wd			<=			id_wd;
+		ex_wreg			<=			id_wreg;
+	end
 end
 
-    
 endmodule

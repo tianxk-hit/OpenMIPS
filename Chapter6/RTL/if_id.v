@@ -1,25 +1,33 @@
- //---------------------------- if_id.v ----------------------------//
-// å°±æ˜¯ä¸€ä¸ªå¯„å­˜å™¨ï¼Œä½œä¸ºæµæ°´çº¿ä¸åŒåŠŸèƒ½æ¨¡å—ä¹‹é—´æ‰“æ‹çš„éƒ¨åˆ†
-`include "../Include/define.v"
+//	IF/ID£ºÔİÊ±±£´æÈ¡Ö¸½×¶ÎÈ¡µÃµÄÖ¸Áî£¬ÒÔ¼°¶ÔÓ¦µÄÖ¸ÁîµØÖ·£¬²¢ÔÚÏÂÒ»¸öÊ±ÖÓ´«µİµ½ÒëÂë½×¶Î
 module if_id(
-    input clk,
-    input rst,
-    input [`InstAddressBus] if_pc,
-    input [`InstDataBus] if_inst,
-    output reg [`InstAddressBus] id_pc,
-    output reg [`InstDataBus] id_inst
+clk,
+rst,
+if_pc,
+if_inst,
+id_pc,
+id_inst
 );
-    always@(posedge clk) begin
-        if(rst == `ResetEnable) begin
-            id_pc <= `ZeroWord;
-            id_inst <= `ZeroWord;
-        end
-        else begin
-            id_pc <= if_pc;
-            id_inst <= if_inst;
-        end    
-    end
+`include	"defines.v"
 
+input	wire				clk;		//Ê±ÖÓĞÅºÅ
+input	wire				rst;		//¸´Î»ĞÅºÅ
 
-    
+//À´×ÔÈ¡Ö¸½×¶ÎµÄĞÅºÅ£¬ÆäÖĞºê¶¨ÒåInstBus±íÊ¾Ö¸Áî¿í¶È£¬Îª32
+input	wire[`InstAddrBus]	if_pc;			//È¡Ö¸½×¶ÎÈ¡µÃµÄÖ¸Áî¶ÔÓ¦µÄµØÖ·
+input	wire[`InstAddrBus]	if_inst;		//È¡Ö¸½×¶ÎÈ¡µÃµÄÖ¸Áî
+
+//¶ÔÓ¦ÒëÂë½×¶ÎµÄĞÅºÅ
+output	reg[`InstAddrBus]	id_pc;			//ÒëÂë½×¶ÎµÄÖ¸Áî¶ÔÓ¦µÄµØÖ·
+output	reg[`InstAddrBus]	id_inst;		//ÒëÂë½×¶ÎµÄÖ¸Áî
+
+always@(posedge clk) begin
+	if(rst == `RstEnable) begin
+		id_pc 	<=		`ZeroWord;		//¸´Î»µÄÊ±ºòpcÎª0
+		id_inst	<=		`ZeroWord;		//¸´Î»µÄÊ±ºòÖ¸ÁîÒ²Îª0£¬Êµ¼Ê¾ÍÊÇ¿ÕÖ¸Áî
+	end
+	else begin
+		id_pc 	<=		if_pc;			//ÆäÓàÊ±¿ÌÏòÏÂ´«µİÈ¡Ö¸½×¶ÎµÄÖµ
+		id_inst	<=		if_inst;
+	end
+end
 endmodule

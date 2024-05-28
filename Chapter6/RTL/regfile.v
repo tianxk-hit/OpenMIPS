@@ -1,64 +1,96 @@
-//---------------------------- regfile.v ----------------------------//
-// é€šç”¨å¯„å­˜å™¨ï¼ŒåŒ…æ‹¬å†™ä¸è¯»
-`include "../Include/define.v"
-module regfile (
-    input clk,
-    input rst,
-
-    input re1,
-    input [`RegisterAddressBus] raddr1,
-    input re2,
-    input [`RegisterAddressBus] raddr2,
-
-    input we,
-    input [`RegisterAddressBus] waddr,
-    input [`RegisterBus] wdata,
-
-    output reg [`RegisterBus] rdata1,
-    output reg [`RegisterBus] rdata2
-
+//RegfileÄ£¿éÊµÏÖÁË32¸ö32Î»Í¨ÓÃÕûÊı¼Ä´æÆ÷£¬¿ÉÒÔÍ¬Ê±½øĞĞÁ½¸ö¼Ä´æÆ÷µÄ¶Á²Ù×÷ºÍÒ»¸ö¼Ä´æÆ÷µÄĞ´²Ù×÷
+module regfile(
+clk,
+rst,
+waddr,
+wdata,
+we,
+raddr1,
+re1,
+rdata1,
+raddr2,
+re2,
+rdata2
 );
+`include	"defines.v"
 
+input	wire				clk;		//Ê±ÖÓĞÅºÅ
+input	wire				rst;		//¸´Î»ĞÅºÅ
 
-//------------------------------------------------------------------//
-// å®šä¹‰é€šç”¨å¯„å­˜å™¨ï¼Œä¸€å…± 32 ä¸ªé€šç”¨å¯„å­˜å™¨ï¼Œæ¯ä¸ªé€šç”¨å¯„å­˜å™¨çš„å¤§å°ä¸º 32 bits
-reg [`RegisterBus] InstMemory [0:`RegisterNum-1];
+//Ğ´¶Ë¿Ú
+input	wire				we;			//Ğ´Ê¹ÄÜĞÅºÅ
+input	wire[`RegAddrBus]	waddr;		//ÒªĞ´ÈëµÄ¼Ä´æÆ÷µØÖ·
+input	wire[`RegBus]		wdata;		//ÒªĞ´ÈëµÄÊı¾İ
 
-//------------------------------------------------------------------//
-// å®Œæˆå¯¹å¯„å­˜å™¨çš„å†™æ“ä½œ
-// å†™å¯„å­˜å™¨æ“ä½œæ˜¯æ—¶åºé€»è¾‘ç”µè·¯ï¼Œå†™æ“ä½œå‘ç”Ÿåœ¨æ—¶é’Ÿä¿¡å·çš„ä¸Šå‡æ²¿
-always@(posedge clk) begin 
-    // é€šç”¨å¯„å­˜å™¨çš„ $0 å¯„å­˜å™¨æ˜¯ä¸ç”¨çš„ï¼Œå› æ­¤ä¸è¦å»å†™å®ƒ
-    if(rst == `ResetDisable && we == `WriteEnable && waddr != `RegisterNumLog2'h0)
-        InstMemory[waddr] = wdata; 
+//¶Á¶Ë¿Ú1
+input	wire				re1;		//µÚÒ»¸ö¶Á¼Ä´æÆ÷¶Ë¿Ú¶ÁÊ¹ÄÜĞÅºÅ
+input	wire[`RegAddrBus]	raddr1;		//µÚÒ»¸ö¶Á¼Ä´æÆ÷¶Ë¿ÚÒª¶ÁÈ¡µÄ¼Ä´æÆ÷µØÖ·
+output	reg[`RegBus]		rdata1;		//µÚÒ»¸ö¶Á¼Ä´æÆ÷¶Ë¿ÚÊä³öµÄ¼Ä´æÆ÷Öµ
+
+//¶Á¶Ë¿Ú2
+input	wire				re2;		//µÚ¶ş¸ö¶Á¼Ä´æÆ÷¶Ë¿Ú¶ÁÊ¹ÄÜĞÅºÅ
+input	wire[`RegAddrBus]	raddr2;		//µÚ¶ş¸ö¶Á¼Ä´æÆ÷¶Ë¿ÚÒª¶ÁÈ¡µÄ¼Ä´æÆ÷µØÖ·
+output	reg[`RegBus]		rdata2;		//µÚ¶ş¸ö¶Á¼Ä´æÆ÷¶Ë¿ÚÊä³öµÄ¼Ä´æÆ÷Öµ
+
+/*********************************************************
+************* µÚÒ»¶Î£º¶¨Òå32¸ö32Î»¼Ä´æÆ÷ **************
+**********************************************************/
+
+reg[`RegBus] regs[0:`RegNum-1];
+
+/*********************************************************
+************* µÚ¶ş¶Î£ºĞ´²Ù×÷ **************
+**********************************************************/
+
+always@(posedge clk) begin
+	if(rst == `RstDisable) begin
+		if((we == `WriteEnable) && (waddr != `RegNumLog2'h0)) begin
+			regs[waddr] <=		wdata;
+		end
+	end
 end
 
+/*********************************************************
+************* µÚÈı¶Î£º¶Á¶Ë¿Ú1µÄ¶Á²Ù×÷ **************
+**********************************************************/
 
-//------------------------------------------------------------------//
-// å®Œæˆå¯¹é€šç”¨å¯„å­˜å™¨çš„è¯»æ“ä½œ
-// è¯»å¯„å­˜å™¨æ“ä½œæ˜¯ç»„åˆé€»è¾‘ç”µè·¯ï¼Œä¹Ÿå°±æ˜¯ä¸€æ—¦è¾“å…¥çš„è¦è¯»å–çš„å¯„å­˜å™¨åœ°å€ raddr1 æˆ–è€…
-// raddr2 å‘ç”Ÿå˜åŒ–ï¼Œé‚£ä¹ˆä¼šç«‹å³ç»™å‡ºæ–°åœ°å€å¯¹åº”çš„å¯„å­˜å™¨çš„å€¼ï¼Œè¿™æ ·å¯ä»¥ä¿è¯åœ¨è¯‘ç é˜¶æ®µ
-// å–å¾—è¦è¯»å–çš„å¯„å­˜å™¨çš„å€¼
 always@(*) begin
-    if(rst == `ResetEnable || re1 == `ReadDisable || raddr1 == `RegisterNumLog2'h0)
-        rdata1 = `ZeroWord;
-    else begin
-        if(waddr == raddr1 && we == `WriteEnable)
-            rdata1 = wdata;
-        else
-            rdata1 = InstMemory[raddr1];
-    end
+	if(rst == `RstEnable) begin
+		rdata1 <=		`ZeroWord;
+	end
+	else if(raddr1 == `RegNumLog2'h0) begin
+		rdata1 <=		`ZeroWord;
+	end
+	else if((raddr1 == waddr) && (we == `WriteEnable) && (re1 == `ReadEnable)) begin
+		rdata1 <=		wdata;
+	end
+	else if(re1 == `ReadEnable) begin
+		rdata1 <=		regs[raddr1];
+	end
+	else begin
+		rdata1 <=		`ZeroWord;
+	end
 end
+
+/*********************************************************
+************* µÚËÄ¶Î£º¶Á¶Ë¿Ú2µÄ¶Á²Ù×÷ **************
+**********************************************************/
 
 always@(*) begin
-    if(rst == `ResetEnable || re2 == `ReadDisable || raddr2 == `RegisterNumLog2'h0)
-        rdata2 = `ZeroWord;
-    else begin
-        if(waddr == raddr2 && we == `WriteEnable)
-            rdata2 = wdata;
-        else
-            rdata2 = InstMemory[raddr2];
-    end
+	if(rst == `RstEnable) begin
+		rdata2 <=		`ZeroWord;
+	end
+	else if(raddr2 == `RegNumLog2'h0) begin
+		rdata2 <=		`ZeroWord;
+	end
+	else if((raddr2 == waddr) && (we == `WriteEnable) && (re2 == `ReadEnable)) begin
+		rdata2 <=		wdata;
+	end
+	else if(re2 == `ReadEnable) begin
+		rdata2 <=		regs[raddr2];
+	end
+	else begin
+		rdata2 <=		`ZeroWord;
+	end
 end
-
 endmodule

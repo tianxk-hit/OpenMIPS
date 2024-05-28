@@ -1,28 +1,32 @@
-//---------------------------- inst_rom.v ----------------------------//
-// inst_rom.v ç”¨æ¥åšæŒ‡ä»¤å¯„å­˜å™¨
-`include "../Include/define.v"
-module inst_rom (
-    input  ce,
-    input  [`InstAddressBus] addr,
-    output reg [`InstDataBus] inst
+// ROMÄ£¿é
+module inst_rom(
+ce,
+addr,
+inst
 );
+`include	"defines.v"
 
-// inst_mem ä¸ºæŒ‡ä»¤å¯„å­˜å™¨ï¼ŒæŒ‡ä»¤å®½åº¦ InstDataBusï¼Œå¯„å­˜å™¨æ·±åº¦ InstMemoryNum
-reg [`InstDataBus] inst_mem [0:`InstMemoryNum-1];
+input	wire					ce;		//Ê¹ÄÜĞÅºÅ
+input	wire[`InstAddrBus]		addr;	//Òª¶ÁÈ¡µÄÖ¸ÁîµØÖ·
+output	reg[`InstBus]			inst;	//¶Á³öµÄÖ¸Áî
 
-// æŒ‡ä»¤å¯„å­˜å™¨ä½¿ç”¨ readmemh è¿›è¡Œåˆå§‹åŒ–
-// inst_rom.data æ–‡ä»¶éœ€è¦åœ¨ Linux ä¸‹é‡‡ç”¨ mips ç›¸å…³çš„å·¥å…· make
-initial begin
-    $readmemh("E:/Master/WorkSpace/OpenMIPS/Chapter6/Data/inst_rom3.data", inst_mem);
+//¶¨ÒåÒ»¸öÊı×é£¬´óĞ¡ÊÇInstMemNum£¬ÔªËØ¿í¶ÈÊÇInstBus
+reg[`InstBus]	inst_mem[0:`InstMemNum-1];
+
+//Ê¹ÓÃÎÄ¼şinst_rom.data³õÊ¼»¯Ö¸Áî´æ´¢Æ÷
+initial $readmemh("F:/FPGAprojects_OPEN/OpenMIPS/code/inst_rom.data",inst_mem);
+
+/*
+OpenMIPSÊÇ°´ÕÕ×Ö½ÚÑ°Ö·µÄ£¬¶ø´Ë´¦¶¨ÒåµÄÖ¸Áî´æ´¢Æ÷µÄÃ¿¸öµØÖ·ÊÇÒ»¸ö32bitµÄ×Ö£¬
+ËùÒÔÒª½«OpenMIPS¸ø³öµÄµØÖ·³ıÒÔ4ÔÙÊ¹ÓÃ£¬³ıÒÔ4Ò²¾ÍÊÇ½«Ö¸ÁîµØÖ·ÓÒÒÆ2Î»
+*/
+//µ±¸´Î»ĞÅºÅÎŞĞ§Ê±£¬ÒÀ¾İÊäÈëµÄµØÖ·£¬¸ø³öÖ¸Áî´æ´¢Æ÷ROMÖĞ¶ÔÓ¦µÄÔªËØ
+always@(*) begin
+	if(ce == `ChipDisable) begin
+		inst <=			`ZeroWord;
+	end
+	else begin
+		inst <=			inst_mem[addr[`InstMemNumLog2+1:2]];
+	end
 end
-
-// é‡‡ç”¨ç»„åˆé€»è¾‘æ ¹æ®è¾“å…¥çš„åœ°å€ç»™å‡ºå¯¹åº”çš„æŒ‡ä»¤
-// éœ€è¦æ³¨æ„çš„æ˜¯ï¼Œå› ä¸ºé‡‡ç”¨çš„æ˜¯å­—å¯»å€ï¼Œå› æ­¤éœ€è¦å°† openmips ç»™å‡ºçš„åœ°å€é™¤ä»¥ 4 ï¼ˆå°†æŒ‡ä»¤åœ°å€å³ç§» 2 ä½ï¼‰
-always @(*) begin
-    if(ce == `ChipDisable)
-        inst = `ZeroWord;
-    else
-        inst = inst_mem[addr[`InstMemoryNumLog2+1:2]];
-end
-
 endmodule

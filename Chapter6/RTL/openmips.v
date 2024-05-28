@@ -1,284 +1,259 @@
-`include "../Include/define.v"
-module openmips (
-    input clk,
-    input rst,
-    input [`InstDataBus] rom_data_i,
+ //¶¥²ãÄ£¿éopenmips
+ module openmips(
+ clk,
+ rst,
+ rom_data_i,
+ rom_addr_o,
+ rom_ce_o
+ );
+ `include	"defines.v"
 
-    output [`InstAddressBus] rom_addr_o,
-    output rom_ce_o
+ input	wire				clk;
+ input	wire				rst;
+ 
+ input	wire[`RegBus]		rom_data_i;			//´ÓÖ¸Áî´æ´¢Æ÷È¡µÃµÄÖ¸Áî
+ output	wire[`RegBus]		rom_addr_o;			//Êä³öµ½Ö¸Áî´æ´¢Æ÷µÄµØÖ·
+ output	wire				rom_ce_o;			//Ö¸Áî´æ´¢Æ÷Ê¹ÄÜĞÅºÅ
+ 
+ //Á¬½ÓIF/IDÄ£¿éÓëÒëÂë½×¶ÎµÄIDÄ£¿éµÄ±äÁ¿
+ wire[`InstAddrBus]			pc;
+ wire[`InstAddrBus]			id_pc_i;
+ wire[`InstBus]				id_inst_i;
+ 
+ //Á¬½ÓÒëÂë½×¶ÎIDÄ£¿éÊä³öÓëID/EXÄ£¿éµÄÊäÈëµÄ±äÁ¿
+ wire[`AluOpBus]			id_aluop_o;
+ wire[`AluSelBus]			id_alusel_o;
+ wire[`RegBus]				id_reg1_o;
+ wire[`RegBus]				id_reg2_o;
+ wire						id_wreg_o;
+ wire[`RegAddrBus]			id_wd_o;
+ 
+ //Á¬½ÓID/EXÄ£¿éÊä³öÓëÖ´ĞĞ½×¶ÎEXÄ£¿éµÄÊäÈëµÄ±äÁ¿
+ wire[`AluOpBus]			ex_aluop_i;
+ wire[`AluSelBus]			ex_alusel_i;
+ wire[`RegBus]				ex_reg1_i;
+ wire[`RegBus]				ex_reg2_i;
+ wire						ex_wreg_i;
+ wire[`RegAddrBus]			ex_wd_i;
+ 
+
+ //Á¬½ÓÖ´ĞĞ½×¶ÎEXÄ£¿éµÄÊä³öÓëEX/MEMÄ£¿éµÄÊäÈëµÄ±äÁ¿
+ wire						ex_wreg_o;
+ wire[`RegAddrBus]			ex_wd_o;
+ wire[`RegBus]				ex_wdata_o;
+ wire[`RegBus]				ex_hi_o;
+ wire[`RegBus]				ex_lo_o;
+ wire						ex_whilo_o;
+
+ 
+ 
+ //Á¬½ÓEX/MEMÄ£¿éµÄÊä³öÓë·ÃÎÊ½×¶ÎMEMÄ£¿éµÄÊäÈëµÄ±äÁ¿
+ wire						mem_wreg_i;
+ wire[`RegAddrBus]			mem_wd_i;
+ wire[`RegBus]				mem_wdata_i;
+ wire						mem_whilo_i;
+ wire[`RegBus]				mem_hi_i;
+ wire[`RegBus]				mem_lo_i;
+ 
+ //Á¬½Ó·ÃÎÊ½×¶ÎMEMÄ£¿éµÄÊä³öÓëMEM/WBÄ£¿éµÄÊäÈëµÄ±äÁ¿
+ wire						mem_wreg_o;
+ wire[`RegAddrBus]			mem_wd_o;
+ wire[`RegBus]				mem_wdata_o;
+ wire						mem_whilo_o;
+ wire[`RegBus]				mem_hi_o;
+ wire[`RegBus]				mem_lo_o;
+ 
+ 
+ 
+ //Á¬½ÓMEM/WBÄ£¿éµÄÊä³öÓë»ØĞ´½×¶ÎµÄÊäÈëµÄ±äÁ¿
+ wire						wb_wreg_i;
+ wire[`RegAddrBus]			wb_wd_i;
+ wire[`RegBus]				wb_wdata_i;
+ wire						wb_whilo_i;
+ wire[`RegBus]				wb_hi_i;
+ wire[`RegBus]				wb_lo_i;
+ 
+ //Á¬½Ó»ØĞ´½×¶ÎHILOÄ£¿éµÄÊä³öÓëEXÄ£¿éµÄÊäÈëµÄ±äÁ¿
+ wire[`RegBus]				wb_hi_o;
+ wire[`RegBus]				wb_lo_o;
+ 
+ //Á¬½ÓÒëÂë½×¶ÎIDÄ£¿éÓëÍ¨ÓÃ¼Ä´æÆ÷RegfileÄ£¿éµÄ±äÁ¿
+ wire						reg1_read;
+ wire						reg2_read;
+ wire[`RegBus]				reg1_data;
+ wire[`RegBus]				reg2_data;
+ wire[`RegAddrBus]			reg1_addr;
+ wire[`RegAddrBus]			reg2_addr;
+ 
+ // pc_regÀı»¯
+ pc_reg	pc_reg0(
+ .clk(clk),
+ .rst(rst),
+ .pc(pc),
+ .ce(rom_ce_o)
+ );
+ 
+ assign rom_addr_o = pc;		//Ö¸Áî´æ´¢Æ÷µÄÊäÈëµØÖ·¾ÍÊÇpcÖµ
+ 
+ // IF/IDÄ£¿éÀı»¯
+ if_id if_id0(
+ .clk(clk),
+ .rst(rst),
+ .if_pc(if_pc),
+ .if_inst(rom_data_i),
+ .id_pc(id_pc_i),
+ .id_inst(id_inst_i)
+ );
+ 
+ // ÒëÂë½×¶ÎIDÄ£¿éÀı»¯
+ id id0(
+.rst(rst),
+.pc_i(id_pc_i),
+.inst_i(id_inst_i),
+.reg1_data_i(reg1_data),
+.reg2_data_i(reg2_data),
+.reg1_read_o(reg1_read),
+.reg2_read_o(reg2_read),
+.reg1_addr_o(reg1_addr),
+.reg2_addr_o(reg2_addr),
+.aluop_o(id_aluop_o),
+.alusel_o(id_alusel_o),
+.reg1_o(id_reg1_o),
+.reg2_o(id_reg2_o),
+.wd_o(id_wd_o),
+.wreg_o(id_wreg_o),
+.mem_wdata_i(mem_wdata_o),
+.mem_wd_i(mem_wd_o),
+.mem_wreg_i(mem_wreg_o),
+.ex_wdata_i(ex_wdata_o),
+.ex_wd_i(ex_wd_o),
+.ex_wreg_i(ex_wreg_o)
+ );
+ 
+ // Í¨ÓÃ¼Ä´æÆ÷RegfileÄ£¿éÀı»¯
+regfile regfile1(
+.clk(clk),
+.rst(rst),
+.waddr(wb_wd_i),
+.wdata(wb_wdata_i),
+.we(wb_wreg_i),
+.raddr1(reg1_addr),
+.re1(reg1_read),
+.rdata1(reg1_data),
+.raddr2(reg2_addr),
+.re2(reg2_read),
+.rdata2(reg2_data)
+ );
+ 
+ // ID/EXÄ£¿éÀı»¯
+id_ex id_ex0(
+.clk(clk),
+.rst(rst),
+.id_alusel(id_alusel_o),
+.id_aluop(id_aluop_o),
+.id_reg1(id_reg1_o),
+.id_reg2(id_reg2_o),
+.id_wd(id_wd_o),
+.id_wreg(id_wreg_o),
+.ex_alusel(ex_alusel_i),
+.ex_aluop(ex_aluop_i),
+.ex_reg1(ex_reg1_i),
+.ex_reg2(ex_reg2_i),
+.ex_wd(ex_wd_i),
+.ex_wreg(ex_wreg_i)
+ );
+ 
+ // EXÄ£¿éÀı»¯
+ex ex0(
+.rst(rst),
+.alusel_i(ex_alusel_i),
+.aluop_i(ex_aluop_i),
+.reg1_i(ex_reg1_i),
+.reg2_i(ex_reg2_i),
+.wd_i(ex_wd_i),
+.wreg_i(ex_wreg_i),
+.wd_o(ex_wd_o),
+.wreg_o(ex_wreg_o),
+.wdata_o(ex_wdata_o),
+
+//HILOÄ£¿é½Ó¿Ú
+.hi_i(wb_hi_o),
+.lo_i(wb_lo_o),
+.mem_whilo_i(mem_whilo_o),
+.mem_hi_i(mem_hi_o),
+.mem_lo_i(mem_lo_o),
+.wb_whilo_i(wb_whilo_i),
+.wb_hi_i(wb_hi_i),
+.wb_lo_i(wb_lo_i),
+.whilo_o(ex_whilo_o),
+.hi_o(ex_hi_o),
+.lo_o(ex_lo_o)
+ );
+ 
+ // EX/MEMÄ£¿éÀı»¯
+ex_mem ex_mem0(
+.clk(clk),
+.rst(rat),
+.ex_wd(ex_wd_o),
+.ex_wreg(ex_wreg_o),
+.ex_wdata(ex_wdata_o),
+.mem_wd(mem_wd_i),
+.mem_wreg(mem_wreg_i),
+.mem_wdata(mem_wdata_i),
+
+.ex_whilo(ex_whilo_o),
+.ex_hi(ex_hi_o),
+.ex_lo(ex_lo_o),
+.mem_whilo(mem_whilo_i),
+.mem_hi(mem_hi_i),
+.mem_lo(mem_lo_i)
+ );
+ 
+ // MEMÄ£¿éÀı»¯
+mem mem0(
+.rst(rst),
+.wd_i(mem_wd_i),
+.wreg_i(mem_wreg_i),
+.wdata_i(mem_wdata_i),
+.wd_o(mem_wd_o),
+.wreg_o(mem_wreg_o),
+.wdata_o(mem_wdata_o),
+
+.whilo_i(mem_whilo_i),
+.hi_i(mem_hi_i),
+.lo_i(mem_lo_i),
+.whilo_o(mem_whilo_o),
+.hi_o(mem_hi_o),
+.lo_o(mem_lo_o)
+ );
+ 
+ //MEM/WBÄ£¿éÀı»¯
+mem_wb mem_wb0(
+.clk(clk),
+.rst(rst),
+.mem_wd(mem_wd_o),
+.mem_wreg(mem_wreg_o),
+.mem_wdata(mem_wdata_o),
+.wb_wd(wb_wd_i),
+.wb_wreg(wb_wreg_i),
+.wb_wdata(wb_wdata_i),
+
+.mem_whilo(mem_whilo_o),
+.mem_hi(mem_hi_o),
+.mem_lo(mem_lo_o),
+.wb_whilo(wb_whilo_i),
+.wb_hi(wb_hi_i),
+.wb_lo(wb_lo_i)
+ );
+ 
+ //HILOÄ£¿éÀı»¯
+hilo_reg hilo_reg0(
+.clk(clk),
+.rst(rst),
+.we(wb_whilo_i),
+.hi_i(wb_hi_i),
+.lo_i(wb_lo_i),
+.hi_o(wb_hi_o),
+.lo_o(wb_lo_o)
 );
-    
-
-//---------------------------- pc_reg.v ----------------------------//
-wire [`InstAddressBus] pc;
-wire ce;
-//---------------------------- if_id.v ----------------------------//
-wire [`InstAddressBus] id_pc_i;
-wire [`InstDataBus] id_inst_i;
-//---------------------------- id.v ----------------------------//
-wire [`ALUOpBus] id_aluop_o;
-wire [`ALUSelBus] id_alusel_o;
-
-wire [`RegisterAddressBus] id_wd_o;
-wire id_wreg_o;
-
-wire [`RegisterBus] id_reg1_o;
-
-wire [`RegisterBus] id_reg2_o;
-
-wire [`RegisterAddressBus] reg1_addr_o, reg2_addr_o;
-wire reg1_read_o, reg2_read_o;
-
-wire [`RegisterBus] reg1_data_i, reg2_data_i;
-
-
-//---------------------------- id_ex.v ----------------------------//
-wire [`ALUOpBus] ex_aluop_i;
-wire [`ALUSelBus] ex_alusel_i;
-wire [`RegisterBus] ex_reg1_i;
-wire [`RegisterBus] ex_reg2_i;
-wire [`RegisterAddressBus]  ex_wd_i;
-wire ex_wreg_i;
-
-//---------------------------- ex.v ----------------------------//
-wire [`RegisterBus] ex_wdata_o;
-wire [`RegisterAddressBus] ex_wd_o;
-wire ex_wreg_o;
-
-wire [`RegisterBus] hi_i, lo_i;
-
-wire [`RegisterBus] wb_hi_i, wb_lo_i;
-wire wb_whilo_i;
-
-wire [`RegisterBus] mem_hi_i, mem_lo_i;
-wire mem_whilo_i;
-
-wire [`RegisterBus] hi_o, lo_o;
-wire whilo_o;
-
-
-//---------------------------- ex_mem.v ----------------------------//
-wire [`RegisterBus] mem_wdata_i;
-wire [`RegisterAddressBus] mem_wd_i;
-wire mem_wreg_i;
-
-wire [`RegisterBus] mem_hi_o, mem_lo_o;
-wire mem_whilo_o;
-//---------------------------- mem.v ----------------------------//
-wire [`RegisterBus] mem_wdata_o;
-wire [`RegisterAddressBus] mem_wd_o;
-wire mem_wreg_o;
-//---------------------------- mem_wb.v ----------------------------//
-wire [`RegisterBus] wb_wdata_i;
-wire [`RegisterAddressBus] wb_wd_i;
-wire wb_wreg_i;
-
-
-// è¿ä¸ŠæŒ‡ä»¤å¯„å­˜å™¨
-assign rom_addr_o = pc;
-assign rom_ce_o = ce;
-
-// ç¨‹åºè®¡æ•°å™¨
-pc_reg pc_reg_inst0 (
-    .clk(clk),
-    .rst(rst),
-
-    .pc(pc),
-    .ce(ce)
-);
-
-
-if_id if_id_inst0 (
-    .clk(clk),
-    .rst(rst),
-
-    .if_pc(pc),
-    .if_inst(rom_data_i),
-
-    .id_pc(id_pc_i),
-    .id_inst(id_inst_i)
-);
-
-
-id id_inst0 (
-    .rst(rst),
-    
-    .pc_i(id_pc_i),
-    .inst_i(id_inst_i),
-
-    .reg1_data_i(reg1_data_i),
-    .reg2_data_i(reg2_data_i),
-    
-    .mem_wdata_i(mem_wdata_o),
-    .mem_wd_i(mem_wd_o),
-    .mem_wreg_i(mem_wreg_o),
-
-    .ex_wdata_i(ex_wdata_o),
-    .ex_wd_i(ex_wd_o),
-    .ex_wreg_i(ex_wreg_o),
-
-    .aluop_o(id_aluop_o),
-    .alusel_o(id_alusel_o),
-    .wd_o(id_wd_o),
-    .wreg_o(id_wreg_o),
-
-    .reg1_o(id_reg1_o),
-    .reg1_addr_o(reg1_addr_o),
-    .reg1_read_o(reg1_read_o),
-
-    .reg2_o(id_reg2_o),
-    .reg2_addr_o(reg2_addr_o),
-    .reg2_read_o(reg2_read_o)
-);
-
-
-id_ex id_ex_inst0 (
-    .clk(clk),
-    .rst(rst),
-
-    .id_aluop(id_aluop_o),
-    .id_alusel(id_alusel_o),
-    .id_reg1(id_reg1_o),
-    .id_reg2(id_reg2_o),
-    .id_wd(id_wd_o),
-    .id_wreg(id_wreg_o),
-
-
-    .ex_aluop(ex_aluop_i),
-    .ex_alusel(ex_alusel_i),
-    .ex_reg1(ex_reg1_i),
-    .ex_reg2(ex_reg2_i),
-    .ex_wd(ex_wd_i),
-    .ex_wreg(ex_wreg_i)
-);
-
-
-ex ex_inst0 (
-    .rst(rst),
-
-    .aluop_i(ex_aluop_i),
-    .alusel_i(ex_alusel_i),
-    .reg1_i(ex_reg1_i),
-    .reg2_i(ex_reg2_i),
-    .wd_i(ex_wd_i),
-    .wreg_i(ex_wreg_i),
-
-    .hi_i(hi_i),
-    .lo_i(lo_i),
-
-    .wb_whilo_i(wb_whilo_i),
-    .wb_hi_i(wb_hi_i),
-    .wb_lo_i(wb_lo_i),
-
-    .mem_whilo_i(mem_whilo_i),
-    .mem_hi_i(mem_hi_i),
-    .mem_lo_i(mem_lo_i),
-
-    .wdata_o(ex_wdata_o),
-    .wd_o(ex_wd_o),
-    .wreg_o(ex_wreg_o),
-
-    .whilo_o(whilo_o),
-    .hi_o(hi_o),
-    .lo_o(lo_o)
-
-    );
-
-
-
-ex_mem ex_mem_inst0 (
-    .clk(clk),
-    .rst(rst),
-
-    .ex_wdata(ex_wdata_o),
-    .ex_wd(ex_wd_o),
-    .ex_wreg(ex_wreg_o),
-
-    .ex_hi(hi_o),
-    .ex_lo(lo_o),
-    .ex_whilo(whilo_o),
-
-    .mem_wdata(mem_wdata_i),
-    .mem_wd(mem_wd_i),
-    .mem_wreg(mem_wreg_i),
-
-    .mem_hi(mem_hi_o),
-    .mem_lo(mem_lo_o),
-    .mem_whilo(mem_whilo_o)
-
-    );
-
-
-
-mem mem_inst0 (
-    .rst(rst),
-
-    .wdata_i(mem_wdata_i),
-    .wd_i(mem_wd_i),
-    .wreg_i(mem_wreg_i),
-    .hi_i(mem_hi_o),
-    .lo_i(mem_lo_o),
-    .whilo_i(mem_whilo_o),
-
-
-    .wdata_o(mem_wdata_o),
-    .wd_o(mem_wd_o),
-    .wreg_o(mem_wreg_o),
-    .hi_o(mem_hi_i),
-    .lo_o(mem_lo_i),
-    .whilo_o(mem_whilo_i)
-);
-
-
-mem_wb mem_wb_inst0 (
-    .clk(clk),
-    .rst(rst),
-
-    .mem_wdata(mem_wdata_o),
-    .mem_wd(mem_wd_o),
-    .mem_wreg(mem_wreg_o),
-    .mem_hi(mem_hi_i),
-    .mem_lo(mem_lo_i),
-    .mem_whilo(mem_whilo_i),
-
-
-    .wb_wdata(wb_wdata_i),
-    .wb_wd(wb_wd_i),
-    .wb_wreg(wb_wreg_i),
-    .wb_hi(wb_hi_i),
-    .wb_lo(wb_lo_i),
-    .wb_whilo(wb_whilo_i)
-);
-
-
-
-regfile regfile_inst0 (
-    .clk(clk),
-    .rst(rst),
-
-    .re1(reg1_read_o),
-    .raddr1(reg1_addr_o),
-    .re2(reg2_read_o),
-    .raddr2(reg2_addr_o),
-
-    .we(wb_wreg_i),
-    .waddr(wb_wd_i),
-    .wdata(wb_wdata_i),
-
-    .rdata1(reg1_data_i),
-    .rdata2(reg2_data_i)
-);
-
-hilo_reg hilo_reg_inst0(
-    .clk(clk),
-    .rst(rst),
-    .we(wb_whilo_i),
-    .hi_i(wb_hi_i),
-    .lo_i(wb_lo_i),
-
-    .hi_o(hi_i),
-    .lo_o(lo_i)
-);
-
-
-endmodule
+ endmodule

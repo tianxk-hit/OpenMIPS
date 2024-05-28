@@ -1,148 +1,220 @@
-//---------------------------- id_ex.v ----------------------------//
-// æ ¹æ®æŒ‡ä»¤å®Œæˆè¿ç®—
-// é¦–å…ˆæ ¹æ® id æ¨¡å—è¾“å‡ºçš„ OP è®¡ç®— logic çš„ç»“æœæˆ–è€… shift çš„ç»“æœ
-// åé¢å†å¢åŠ ä¸€çº§ MUX 
-// æ ¹æ® EXE_RES çš„å€¼ç¡®å®šå…·ä½“çš„é€‰é€šé€»è¾‘ï¼Œæ˜¯è¾“å‡º logic çš„ç»“æœï¼Œè¿˜æ˜¯è¾“å‡º shift çš„ç»“æœ
-`include "../Include/define.v"
-module ex (
+//exÄ£¿éÒÀ¾İÒëÂë½×¶ÎµÃµ½µÄÊı¾İ½øĞĞÔËËã
+module ex(
+rst,
+alusel_i,
+aluop_i,
+reg1_i,
+reg2_i,
+wd_i,
+wreg_i,
+wd_o,
+wreg_o,
+wdata_o,
 
-    input rst,
-    input [`ALUOpBus] aluop_i,
-    input [`ALUSelBus] alusel_i,
-    input [`RegisterBus] reg1_i,
-    input [`RegisterBus] reg2_i,
-    input [`RegisterAddressBus] wd_i,
-    input wreg_i,
-
-    input [`RegisterBus] hi_i,
-    input [`RegisterBus] lo_i,
-
-    input wb_whilo_i,
-    input [`RegisterBus] wb_hi_i,
-    input [`RegisterBus] wb_lo_i,
-
-    input mem_whilo_i,
-    input [`RegisterBus] mem_hi_i,
-    input [`RegisterBus] mem_lo_i,
-
-    output reg [`RegisterBus] wdata_o,
-    output [`RegisterAddressBus] wd_o,
-    output wreg_o,
-
-    output reg whilo_o,
-    output reg [`RegisterBus] hi_o,
-    output reg [`RegisterBus] lo_o
-
-
+//HILOÄ£¿é½Ó¿Ú
+hi_i,
+lo_i,
+mem_whilo_i,
+mem_hi_i,
+mem_lo_i,
+wb_whilo_i,
+wb_hi_i,
+wb_lo_i,
+whilo_o,
+hi_o,
+lo_o
 );
+`include	"defines.v"
 
-    assign wreg_o = wreg_i;
-    assign wd_o = wd_i;
+input	wire				rst;
 
-    reg [`RegisterBus] logic_calu;
-    reg [`RegisterBus] shift_calu;
-    reg [`RegisterBus] move_calu;
+//ÒëÂë½×¶ÎËÍµ½Ö´ĞĞ½×¶ÎµÄĞÅÏ¢
+input	wire[`AluOpBus]		aluop_i;
+input	wire[`AluSelBus]	alusel_i;
+input	wire[`RegBus]		reg1_i;
+input	wire[`RegBus]		reg2_i;
+input	wire[`RegAddrBus]	wd_i;
+input	wire				wreg_i;
 
-    reg [`RegisterBus] HI, LO;
+//Ö´ĞĞµÄ½á¹û
+output	reg[`RegAddrBus]	wd_o;
+output	reg					wreg_o;
+output	reg[`RegBus]		wdata_o;
 
-    always @(*) begin
-        if(rst == `ResetEnable) 
-            {HI, LO} = {`ZeroWord, `ZeroWord};
-        else
-            if(mem_whilo_i == `WriteEnable)
-                {HI, LO} = {mem_hi_i, mem_lo_i}; 
-            else if(wb_whilo_i == `WriteEnable)
-                {HI, LO} = {wb_hi_i, wb_lo_i};
-            else
-                {HI, LO} = {hi_i, lo_i};
-    end
+//HILOÄ£¿é¸ø³öµÄHI¡¢LO¼Ä´æÆ÷µÄÖµ
+input	wire[`RegBus]		hi_i;
+input	wire[`RegBus]		lo_i;
 
-    always @(*) begin
-        if(rst == `ResetEnable)
-            move_calu = `ZeroWord;
-        else
-            case (aluop_i)
-                `EXE_MFHI_OP: move_calu = HI;
-                `EXE_MFLO_OP: move_calu = LO;
-                `EXE_MOVN_OP: move_calu = reg1_i;
-                `EXE_MOVZ_OP: move_calu = reg1_i;
-                default: begin end
-            endcase
-    end
+//»ØĞ´½×¶ÎµÄÖ¸ÁîÊÇ·ñÒªĞ´HI¡¢LO£¬ÓÃÓÚ¼ì²âHI¡¢LO¼Ä´æÆ÷´øÀ´µÄÊı¾İÏà¹ØÎÊÌâ
+input	wire[`RegBus]		wb_hi_i;
+input	wire[`RegBus]		wb_lo_i;
+input	wire				wb_whilo_i;
 
-    always @(*) begin
-        if(rst == `ResetEnable) begin
-            whilo_o = `WriteDisable;
-            hi_o = `ZeroWord;
-            lo_o = `ZeroWord;
-        end
-        else
-            case (aluop_i)
-                `EXE_MTHI_OP:  begin
-                    hi_o = reg1_i;
-                    lo_o = LO;
-                    whilo_o = `WriteEnable;
-                end
-                `EXE_MTLO_OP:  begin
-                    hi_o = HI;
-                    lo_o = reg1_i;
-                    whilo_o = `WriteEnable;
-                end
-                default: begin
-                    hi_o = `ZeroWord;
-                    lo_o = `ZeroWord;
-                    whilo_o = `WriteDisable;
-                end
-            endcase
-    end
+//·Ã´æ½×¶ÎµÄÖ¸ÁîÊÇ·ñÒªĞ´HI¡¢LO£¬ÓÃÓÚ¼ì²âHI¡¢LO¼Ä´æÆ÷´øÀ´µÄÊı¾İÏà¹ØÎÊÌâ
+input	wire[`RegBus]		mem_hi_i;
+input	wire[`RegBus]		mem_lo_i;
+input	wire				mem_whilo_i;
+
+//´¦ÓÚÖ´ĞĞ½×¶ÎµÄÖ¸Áî¶ÔHI¡¢LO¼Ä´æÆ÷µÄĞ´²Ù×÷ÇëÇó
+output	reg[`RegBus]		hi_o;
+output	reg[`RegBus]		lo_o;
+output	reg					whilo_o;
+
+reg[`RegBus]	logicout;	//±£´æÂß¼­ÔËËãµÄ½á¹û
+reg[`RegBus]	shiftres;	//±£´æÒÆÎ»ÔËËã½á¹û
+reg[`RegBus]	moveres;	//ÒÆ¶¯²Ù×÷µÄ½á¹û
+reg[`RegBus]	HI;			//±£´æHI¼Ä´æÆ÷µÄ×îĞÂÖµ
+reg[`RegBus]	LO;			//±£´æLO¼Ä´æÆ÷µÄ×îĞÂÖµ
 
 
-    // å®Œæˆç®—æ•°è¿ç®—çš„è®¡ç®—ç»“æœ
-    always@(*) begin
-        if(rst == `ResetEnable)
-            logic_calu = `ZeroWord;
-        else
-            case (aluop_i)
-                // æˆ–
-                `EXE_OR_OP:  logic_calu = reg1_i | reg2_i;
-                // ä¸
-                `EXE_AND_OP: logic_calu = reg1_i & reg2_i;
-                // å¼‚æˆ–
-                `EXE_XOR_OP: logic_calu = reg1_i ^ reg2_i;
-                // æˆ–é
-                `EXE_NOR_OP: logic_calu = ~(reg1_i | reg2_i); 
-                default: logic_calu = `ZeroWord;
-            endcase
-    end
 
-    // å®Œæˆç§»ä½æ“ä½œçš„è®¡ç®—ç»“æœ
-    always@(*) begin
-        if(rst == `ResetEnable)
-            shift_calu = `ZeroWord;
-        else
-            case (aluop_i)
-                // é€»è¾‘å·¦ç§»
-                `EXE_SLL_OP:  shift_calu = reg2_i << reg1_i[4:0];
-                // é€»è¾‘å³ç§»
-                `EXE_SRL_OP:  shift_calu = reg2_i >> reg1_i[4:0];
-                // ç®—æ•°å³ç§»
-                `EXE_SRA_OP:  shift_calu = ({32{reg2_i[31]}} << (6'd32 - {1'b0, reg1_i[4:0]})) | reg2_i >> reg1_i[4:0];
-                default: shift_calu = `ZeroWord;
-            endcase
-    end
+/*********************************************************************************************
+************* µÚÒ»¶Î£ºµÃµ½×îĞÂµÄHI¡¢LO¼Ä´æÆ÷µÄÖµ£¬´Ë´¦Òª½â¾öÊı¾İÏà¹ØÎÊÌâ **************
+**********************************************************************************************/
 
-    // é€‰é€šè¾“å‡º logic è¿˜æ˜¯ shift çš„è®¡ç®—ç»“æœ
-    always@(*) begin
-        if(rst == `ResetEnable)
-            wdata_o = `ZeroWord;
-        else
-            case (alusel_i)
-                `EXE_RES_LOGIC: wdata_o = logic_calu;
-                `EXE_RES_SHIFT: wdata_o = shift_calu;
-                `EXE_RES_MOVE:  wdata_o = move_calu;
-                default: wdata_o = `ZeroWord;
-            endcase
-    end
+always@(*) begin
+	if(rst == `RstEnable) begin
+		{HI, LO} 	<=			{`ZeroWord, `ZeroWord};
+	end
+	else if(mem_whilo_i == `WriteEnable) begin
+		{HI, LO}	<=			{mem_hi_i, mem_lo_i};
+	end
+	else if(wb_whilo_i == `WriteEnable) begin
+		{HI, LO}	<=			{wb_hi_i, wb_lo_i};
+	end
+	else begin
+		{HI, LO}	<=			{hi_i, lo_i};
+	end
+end
 
-    
+/*********************************************************************************************
+************* µÚ¶ş¶Î£ºMFHI¡¢MFLO¡¢MOVN¡¢MOVZ **************
+**********************************************************************************************/
+
+always@(*) begin
+	if(rst == `RstEnable) begin
+		moveres	<=			`ZeroWord;
+	end
+	else begin
+		moveres	<=			`ZeroWord;
+		case(aluop_i)
+			`EXE_MFHI_OP: begin
+				moveres	<=			HI;
+			end
+			`EXE_MFLO_OP: begin
+				moveres	<=			LO;
+			end
+			`EXE_MOVZ_OP: begin
+				moveres	<=			reg1_i;
+			end
+			`EXE_MOVN_OP: begin
+				moveres	<=			reg1_i;
+			end
+			default: begin
+			end
+		endcase
+	end
+end
+
+
+//½øĞĞÂß¼­ÔËËã
+always@(*) begin
+	if(rst == `RstEnable) begin
+		logicout <=			`ZeroWord;
+	end
+	else begin
+		case(aluop_i)
+			`EXE_OR_OP: begin
+				logicout <=		reg1_i | reg2_i;
+			end
+			`EXE_AND_OP: begin
+				logicout <=		reg1_i & reg2_i;
+			end
+			`EXE_NOR_OP : begin
+				logicout <=		~(reg1_i | reg2_i);
+			end
+			`EXE_XOR_OP: begin
+				logicout <=		reg1_i ^ reg2_i;
+			end
+			default:begin
+				logicout <=		`ZeroWord;
+			end
+		endcase
+	end
+end
+
+//½øĞĞÒÆÎ»ÔËËã
+always@(*) begin
+	if(rst == `RstEnable) begin
+		shiftres <=			`ZeroWord;
+	end
+	else begin
+		case(aluop_i)
+			`EXE_SLL_OP: begin
+				shiftres <=		reg2_i << reg1_i[4:0];
+			end
+			`EXE_SRL_OP: begin
+				shiftres <=		reg2_i >> reg1_i[4:0];
+			end
+			`EXE_SRA_OP: begin
+				shiftres <=		({32{reg2_i[31]}} << (6'd32-{1'b0,reg1_i[4:0]}))|(reg2_i >> reg1_i[4:0]);
+			end
+			default:begin
+				shiftres <=		`ZeroWord;
+			end
+		endcase
+	end
+end
+/*********************************************************************************************
+************* µÚÈı¶Î£ºÒÀ¾İalusel_iÖ¸Ê¾µÄÔËËãÀàĞÍ£¬Ñ¡ÔñÒ»¸öÔËËã½á¹û×÷Îª×îÖÕ½á¹û **************
+					************* ´Ë´¦Ö»ÓĞÂß¼­ÔËËã½á¹û **************
+**********************************************************************************************/
+
+always@(*) begin
+	wd_o 	<=			wd_i;			//wd_oµÈÓÚwd_i£¬ÒªĞ´µÄÄ¿µÄ¼Ä´æÆ÷µØÖ·
+	wreg_o 	<=			wreg_i;			//wreg_oµÈÓÚwreg_i£¬±íÊ¾ÊÇ·ñÒªĞ´Ä¿µÄ¼Ä´æÆ÷
+	case(alusel_i)
+		`EXE_RES_LOGIC: begin
+			wdata_o <=			logicout;	//wdata_oÖĞ´æ·ÅÔËËã½á¹û
+		end
+		
+		`EXE_RES_SHIFT: begin
+			wdata_o	<=			shiftres;
+		end
+		`EXE_RES_MOVE: begin
+			wdata_o	<=			moveres;
+		end
+		default:begin
+			wdata_o <=			`ZeroWord;
+		end
+	endcase
+end
+
+
+/*********************************************************************************************
+************* µÚËÄ¶Î£ºÈç¹ûÊÇMTHI¡¢MTLOÖ¸Áî£¬ÄÇÃ´ĞèÒª¸ø³öwhilo_o¡¢hi_o¡¢lo_iµÄÖµ **************
+**********************************************************************************************/
+
+always@(*) begin
+	if(rst == `RstEnable) begin
+		whilo_o	<=				`WriteDisable;
+		hi_o	<=				`ZeroWord;
+		lo_o	<=				`ZeroWord;
+	end
+	else if(aluop_i == `EXE_MTHI_OP) begin
+		whilo_o	<=				`WriteEnable;
+		hi_o	<=				reg1_i;
+		lo_o	<=				LO;
+	end
+	else if(aluop_i == `EXE_MTLO_OP) begin
+		whilo_o	<=				`WriteEnable;
+		hi_o	<=				HI;
+		lo_o	<=				reg1_i;
+	end
+	else begin
+		whilo_o	<=				`WriteDisable;
+		hi_o	<=				`ZeroWord;
+		lo_o	<=				`ZeroWord;
+	end
+end
 endmodule
